@@ -55,6 +55,7 @@ export async function obtenerEjerciciosPorMusculo(
 
 export async function obtenerEjercicioPorId(id: string): Promise<Ejercicio> {
   const { data } = await client.get(`/exercises/exercise/${id}`);
+  console.log('[API raw] Todos los campos del ejercicio:', JSON.stringify(data));
   return normalizarEjercicio(data);
 }
 
