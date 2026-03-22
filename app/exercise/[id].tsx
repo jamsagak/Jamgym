@@ -14,6 +14,7 @@ import { LoadingSpinner } from '../../src/components/LoadingSpinner';
 import { BodyPartColors, Colors, Radius, Spacing } from '../../src/constants/theme';
 import { useExerciseById, useExercisesByTarget } from '../../src/hooks/useExercises';
 import { useFavorites } from '../../src/hooks/useFavorites';
+import { useWebImage } from '../../src/hooks/useWebImage';
 import { ExerciseCard } from '../../src/components/ExerciseCard';
 
 export default function ExerciseDetailScreen() {
@@ -23,6 +24,7 @@ export default function ExerciseDetailScreen() {
   const { isFavorite, toggleFavorite } = useFavorites();
 
   const [imgError, setImgError] = useState(false);
+  const imageUri = useWebImage(exercise?.gifUrl ?? '');
   const { data: similarData } = useExercisesByTarget(exercise?.target ?? '');
   const similar = similarData?.pages.flatMap((p) => p).filter((e) => e.id !== id).slice(0, 5) ?? [];
 
@@ -39,14 +41,14 @@ export default function ExerciseDetailScreen() {
     >
       {/* GIF */}
       <View style={styles.gifContainer}>
-        {imgError || !exercise.gifUrl ? (
+        {imgError || !imageUri ? (
           <View style={[styles.gif, styles.gifPlaceholder]}>
             <Text style={styles.gifPlaceholderIcon}>🏋️</Text>
             <Text style={styles.gifPlaceholderText}>Image not available</Text>
           </View>
         ) : (
           <Image
-            source={{ uri: exercise.gifUrl }}
+            source={{ uri: imageUri }}
             style={styles.gif}
             resizeMode="contain"
             onError={() => setImgError(true)}

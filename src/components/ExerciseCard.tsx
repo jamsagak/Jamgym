@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Colors, Radius, Spacing } from '../constants/theme';
+import { useWebImage } from '../hooks/useWebImage';
 import type { Exercise } from '../types/exercise';
 
 interface Props {
@@ -13,6 +14,7 @@ interface Props {
 export function ExerciseCard({ exercise, onFavoritePress, isFavorite }: Props) {
   const router = useRouter();
   const [imgError, setImgError] = useState(false);
+  const imageUri = useWebImage(exercise.gifUrl);
 
   return (
     <TouchableOpacity
@@ -20,13 +22,13 @@ export function ExerciseCard({ exercise, onFavoritePress, isFavorite }: Props) {
       onPress={() => router.push(`/exercise/${exercise.id}`)}
       activeOpacity={0.85}
     >
-      {imgError || !exercise.gifUrl ? (
+      {imgError || !imageUri ? (
         <View style={[styles.gif, styles.placeholder]}>
           <Text style={styles.placeholderIcon}>🏋️</Text>
         </View>
       ) : (
         <Image
-          source={{ uri: exercise.gifUrl }}
+          source={{ uri: imageUri }}
           style={styles.gif}
           resizeMode="cover"
           onError={() => setImgError(true)}
