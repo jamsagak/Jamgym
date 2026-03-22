@@ -10,15 +10,10 @@ import { ErrorMsg } from '@/components/ErrorMsg';
 import { traducirParte, traducirMusculo, traducirEquipamiento } from '@/lib/traducciones';
 import { esFavorito, toggleFavorito } from '@/lib/favoritos';
 
-function gifProxy(url: string): string | null {
-  if (!url) return null;
-  return `/api/imagen?url=${encodeURIComponent(url)}`;
-}
-
 export default function DetalleEjercicio({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const [favorito, setFavorito] = useState(false);
-  const [imgError, setImgError] = useState(false);
+  const [intentos, setIntentos] = useState(0);
 
   const { data: ejercicio, isLoading, isError, refetch } = useQuery({
     queryKey: ['ejercicio', id],
@@ -54,16 +49,20 @@ export default function DetalleEjercicio({ params }: { params: Promise<{ id: str
       <div className="grid md:grid-cols-2 gap-10 mb-12">
         {/* GIF */}
         <div className="bg-card border border-border rounded-2xl overflow-hidden aspect-square flex items-center justify-center gif-container">
-          {!imgError && gifProxy(ejercicio.gifUrl) ? (
-            <img
-              src={gifProxy(ejercicio.gifUrl)!}
-              alt={ejercicio.name}
-              className="w-full h-full object-contain"
-              onError={() => setImgError(true)}
-            />
-          ) : (
-            <span className="text-7xl">🏋️</span>
-          )}
+          {(() => {
+            const url = ejercicio.gifUrl;
+            const src = !url ? null : intentos === 0 ? url : intentos === 1 ? `/api/imagen?url=${encodeURIComponent(url)}` : null;
+            return src ? (
+              <img
+                src={src}
+                alt={ejercicio.name}
+                className="w-full h-full object-contain"
+                onError={() => setIntentos((p) => p + 1)}
+              />
+            ) : (
+              <span className="text-7xl">🏋️</span>
+            );
+          })()}
         </div>
 
         {/* Info */}

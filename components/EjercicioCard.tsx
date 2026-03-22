@@ -10,14 +10,19 @@ interface Props {
   ejercicio: Ejercicio;
 }
 
-function gifProxy(url: string): string | null {
-  if (!url) return null;
-  return `/api/imagen?url=${encodeURIComponent(url)}`;
-}
-
 export function EjercicioCard({ ejercicio }: Props) {
   const [favorito, setFavorito] = useState(false);
-  const [imgError, setImgError] = useState(false);
+  const [intentos, setIntentos] = useState(0);
+
+  // Intento 1: URL directa. Intento 2: proxy con auth. Intento 3: placeholder
+  function getSrc(): string | null {
+    if (!ejercicio.gifUrl) return null;
+    if (intentos === 0) return ejercicio.gifUrl;
+    if (intentos === 1) return `/api/imagen?url=${encodeURIComponent(ejercicio.gifUrl)}`;
+    return null;
+  }
+
+  const src = getSrc();
 
   useEffect(() => {
     setFavorito(esFavorito(ejercicio.id));
@@ -36,12 +41,12 @@ export function EjercicioCard({ ejercicio }: Props) {
     >
       {/* GIF */}
       <div className="relative aspect-square bg-dark gif-container">
-        {!imgError && gifProxy(ejercicio.gifUrl) ? (
+        {src ? (
           <img
-            src={gifProxy(ejercicio.gifUrl)!}
+            src={src}
             alt={ejercicio.name}
             className="w-full h-full object-cover"
-            onError={() => setImgError(true)}
+            onError={() => setIntentos((p) => p + 1)}
             loading="lazy"
           />
         ) : (
