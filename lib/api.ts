@@ -17,7 +17,7 @@ const client = axios.create({
 function normalizarEjercicio(e: Ejercicio): Ejercicio {
   return {
     ...e,
-    gifUrl: e.gifUrl || `https://v2.exercisedb.io/image/${e.id}`,
+    gifUrl: e.gifUrl || `https://exercisedb.p.rapidapi.com/image?exerciseId=${e.id}`,
   };
 }
 

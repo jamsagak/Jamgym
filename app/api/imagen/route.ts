@@ -26,7 +26,11 @@ export async function GET(request: NextRequest) {
   if (!url) return placeholderResponse();
 
   // Solo permitir URLs de exercisedb
-  if (!url.startsWith('https://v2.exercisedb.io/')) {
+  const allowed =
+    url.startsWith('https://v2.exercisedb.io/') ||
+    url.startsWith('https://exercisedb.p.rapidapi.com/image') ||
+    url.startsWith('https://static.exercisedb.dev/');
+  if (!allowed) {
     console.warn('[imagen proxy] URL no permitida:', url);
     return placeholderResponse();
   }
