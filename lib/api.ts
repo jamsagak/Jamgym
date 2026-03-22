@@ -12,12 +12,46 @@ const client = axios.create({
   },
 });
 
-// The ExerciseDB API no longer returns gifUrl in exercise objects.
-// Images are still hosted at v2.exercisedb.io/image/{id}.
-function normalizarEjercicio(e: Ejercicio): Ejercicio {
+// ExerciseDB API no longer returns gifUrl. Use yuhonas/free-exercise-db on GitHub
+// as fallback image source. IDs are constructed from exercise names (Title_Case).
+function toYuhonaId(name: string): string {
+  return name
+    .replace(/\//g, '_')
+    .replace(/[^a-zA-Z0-9\s_-]/g, '')
+    .trim()
+    .split(/\s+/)
+    .map((word) =>
+      word
+        .split('-')
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+        .join('-')
+    )
+    .join('_');
+}
+
+const GITHUB_IMAGE_BASE =
+  'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises';
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function normalizarEjercicio(e: any): Ejercicio {
+  const id = e.exerciseId || e.id;
+  const gifUrl =
+    e.gifUrl ||
+    e.imageUrl ||
+    `${GITHUB_IMAGE_BASE}/${toYuhonaId(e.name)}/0.jpg`;
+
   return {
-    ...e,
-    gifUrl: e.gifUrl || `https://exercisedb.p.rapidapi.com/image?exerciseId=${e.id}`,
+    id,
+    name: e.name,
+    bodyPart: Array.isArray(e.bodyParts) ? e.bodyParts[0] : e.bodyPart,
+    target: Array.isArray(e.targetMuscles) ? e.targetMuscles[0] : e.target,
+    equipment: Array.isArray(e.equipments) ? e.equipments[0] : e.equipment,
+    gifUrl,
+    instructions: e.instructions || [],
+    secondaryMuscles: e.secondaryMuscles || [],
+    category: e.category,
+    description: e.description,
+    difficulty: e.difficulty,
   };
 }
 
@@ -55,7 +89,6 @@ export async function obtenerEjerciciosPorMusculo(
 
 export async function obtenerEjercicioPorId(id: string): Promise<Ejercicio> {
   const { data } = await client.get(`/exercises/exercise/${id}`);
-  console.log('[API raw] Todos los campos del ejercicio:', JSON.stringify(data));
   return normalizarEjercicio(data);
 }
 
