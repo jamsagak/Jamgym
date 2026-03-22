@@ -12,6 +12,15 @@ const client = axios.create({
   },
 });
 
+// The ExerciseDB API no longer returns gifUrl in exercise objects.
+// Images are still hosted at v2.exercisedb.io/image/{id}.
+function normalizarEjercicio(e: Ejercicio): Ejercicio {
+  return {
+    ...e,
+    gifUrl: e.gifUrl || `https://v2.exercisedb.io/image/${e.id}`,
+  };
+}
+
 export async function obtenerPartesCuerpo(): Promise<string[]> {
   const { data } = await client.get('/exercises/bodyPartList');
   return data;
@@ -19,7 +28,7 @@ export async function obtenerPartesCuerpo(): Promise<string[]> {
 
 export async function obtenerEjercicios(limit = 20, offset = 0): Promise<Ejercicio[]> {
   const { data } = await client.get('/exercises', { params: { limit, offset } });
-  return data;
+  return data.map(normalizarEjercicio);
 }
 
 export async function obtenerEjerciciosPorParte(
@@ -30,7 +39,7 @@ export async function obtenerEjerciciosPorParte(
   const { data } = await client.get(`/exercises/bodyPart/${encodeURIComponent(parte)}`, {
     params: { limit, offset },
   });
-  return data;
+  return data.map(normalizarEjercicio);
 }
 
 export async function obtenerEjerciciosPorMusculo(
@@ -41,12 +50,12 @@ export async function obtenerEjerciciosPorMusculo(
   const { data } = await client.get(`/exercises/target/${encodeURIComponent(musculo)}`, {
     params: { limit, offset },
   });
-  return data;
+  return data.map(normalizarEjercicio);
 }
 
 export async function obtenerEjercicioPorId(id: string): Promise<Ejercicio> {
   const { data } = await client.get(`/exercises/exercise/${id}`);
-  return data;
+  return normalizarEjercicio(data);
 }
 
 export async function buscarEjercicios(
@@ -57,5 +66,5 @@ export async function buscarEjercicios(
   const { data } = await client.get('/exercises', {
     params: { name: nombre, limit, offset },
   });
-  return data;
+  return data.map(normalizarEjercicio);
 }

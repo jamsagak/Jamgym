@@ -7,4 +7,8 @@ export interface Ejercicio {
   gifUrl: string;
   instructions: string[];
   secondaryMuscles: string[];
+  // New fields returned by updated ExerciseDB API
+  category?: string;
+  description?: string;
+  difficulty?: string;
 }

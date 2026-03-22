@@ -27,11 +27,7 @@ export default function DetalleEjercicio({ params }: { params: Promise<{ id: str
   });
 
   useEffect(() => {
-    if (ejercicio) {
-      setFavorito(esFavorito(ejercicio.id));
-      console.log('[DEBUG] Ejercicio completo:', ejercicio);
-      console.log('[DEBUG] gifUrl:', ejercicio.gifUrl);
-    }
+    if (ejercicio) setFavorito(esFavorito(ejercicio.id));
   }, [ejercicio]);
 
   if (isLoading) return <Spinner texto="Cargando ejercicio..." />;
