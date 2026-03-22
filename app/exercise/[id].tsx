@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   Image,
   ScrollView,
@@ -21,6 +22,7 @@ export default function ExerciseDetailScreen() {
   const { data: exercise, isLoading, isError, refetch } = useExerciseById(id ?? '');
   const { isFavorite, toggleFavorite } = useFavorites();
 
+  const [imgError, setImgError] = useState(false);
   const { data: similarData } = useExercisesByTarget(exercise?.target ?? '');
   const similar = similarData?.pages.flatMap((p) => p).filter((e) => e.id !== id).slice(0, 5) ?? [];
 
@@ -37,7 +39,19 @@ export default function ExerciseDetailScreen() {
     >
       {/* GIF */}
       <View style={styles.gifContainer}>
-        <Image source={{ uri: exercise.gifUrl }} style={styles.gif} resizeMode="contain" />
+        {imgError || !exercise.gifUrl ? (
+          <View style={[styles.gif, styles.gifPlaceholder]}>
+            <Text style={styles.gifPlaceholderIcon}>🏋️</Text>
+            <Text style={styles.gifPlaceholderText}>Image not available</Text>
+          </View>
+        ) : (
+          <Image
+            source={{ uri: exercise.gifUrl }}
+            style={styles.gif}
+            resizeMode="contain"
+            onError={() => setImgError(true)}
+          />
+        )}
         <TouchableOpacity
           style={styles.favBtn}
           onPress={() => toggleFavorite(exercise.id)}
@@ -127,6 +141,14 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   gif: { width: 280, height: 280 },
+  gifPlaceholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.card,
+    borderRadius: Radius.md,
+  },
+  gifPlaceholderIcon: { fontSize: 64 },
+  gifPlaceholderText: { color: Colors.textMuted, fontSize: 14, marginTop: Spacing.sm },
   favBtn: {
     position: 'absolute',
     top: Spacing.md,

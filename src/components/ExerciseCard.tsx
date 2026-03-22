@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Colors, Radius, Spacing } from '../constants/theme';
@@ -11,6 +12,7 @@ interface Props {
 
 export function ExerciseCard({ exercise, onFavoritePress, isFavorite }: Props) {
   const router = useRouter();
+  const [imgError, setImgError] = useState(false);
 
   return (
     <TouchableOpacity
@@ -18,7 +20,18 @@ export function ExerciseCard({ exercise, onFavoritePress, isFavorite }: Props) {
       onPress={() => router.push(`/exercise/${exercise.id}`)}
       activeOpacity={0.85}
     >
-      <Image source={{ uri: exercise.gifUrl }} style={styles.gif} resizeMode="cover" />
+      {imgError || !exercise.gifUrl ? (
+        <View style={[styles.gif, styles.placeholder]}>
+          <Text style={styles.placeholderIcon}>🏋️</Text>
+        </View>
+      ) : (
+        <Image
+          source={{ uri: exercise.gifUrl }}
+          style={styles.gif}
+          resizeMode="cover"
+          onError={() => setImgError(true)}
+        />
+      )}
       <View style={styles.info}>
         <Text style={styles.name} numberOfLines={2}>
           {exercise.name}
@@ -57,6 +70,13 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     backgroundColor: Colors.surface,
+  },
+  placeholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  placeholderIcon: {
+    fontSize: 32,
   },
   info: {
     flex: 1,
