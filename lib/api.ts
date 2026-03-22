@@ -1,52 +1,22 @@
 import axios from 'axios';
 import type { Ejercicio } from '@/types/ejercicio';
 
-const API_KEY = process.env.NEXT_PUBLIC_RAPIDAPI_KEY ?? '';
-const BASE_URL = 'https://exercisedb.p.rapidapi.com';
+// ExerciseDB Open Source — free, no API key required
+// Repo: https://github.com/ExerciseDB/exercisedb-api
+const BASE_URL = 'https://exercisedb-api.vercel.app/api/v1';
 
-const client = axios.create({
-  baseURL: BASE_URL,
-  headers: {
-    'X-RapidAPI-Key': API_KEY,
-    'X-RapidAPI-Host': 'exercisedb.p.rapidapi.com',
-  },
-});
+const client = axios.create({ baseURL: BASE_URL });
 
-// ExerciseDB API no longer returns gifUrl. Use yuhonas/free-exercise-db on GitHub
-// as fallback image source. IDs are constructed from exercise names (Title_Case).
-function toYuhonaId(name: string): string {
-  return name
-    .replace(/\//g, '_')
-    .replace(/[^a-zA-Z0-9\s_-]/g, '')
-    .trim()
-    .split(/\s+/)
-    .map((word) =>
-      word
-        .split('-')
-        .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
-        .join('-')
-    )
-    .join('_');
-}
-
-const GITHUB_IMAGE_BASE =
-  'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises';
-
+// New API uses: exerciseId (hash), bodyParts[], targetMuscles[], equipments[], gifUrl (CDN)
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function normalizarEjercicio(e: any): Ejercicio {
-  const id = e.exerciseId || e.id;
-  const gifUrl =
-    e.gifUrl ||
-    e.imageUrl ||
-    `${GITHUB_IMAGE_BASE}/${toYuhonaId(e.name)}/0.jpg`;
-
   return {
-    id,
+    id: e.exerciseId || e.id,
     name: e.name,
-    bodyPart: Array.isArray(e.bodyParts) ? e.bodyParts[0] : e.bodyPart,
-    target: Array.isArray(e.targetMuscles) ? e.targetMuscles[0] : e.target,
-    equipment: Array.isArray(e.equipments) ? e.equipments[0] : e.equipment,
-    gifUrl,
+    bodyPart: Array.isArray(e.bodyParts) ? e.bodyParts[0] : (e.bodyPart ?? ''),
+    target: Array.isArray(e.targetMuscles) ? e.targetMuscles[0] : (e.target ?? ''),
+    equipment: Array.isArray(e.equipments) ? e.equipments[0] : (e.equipment ?? ''),
+    gifUrl: e.gifUrl || '',
     instructions: e.instructions || [],
     secondaryMuscles: e.secondaryMuscles || [],
     category: e.category,
@@ -55,14 +25,24 @@ function normalizarEjercicio(e: any): Ejercicio {
   };
 }
 
+// Handles both flat array responses and { data: { exercises: [...] } } wrapped responses
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function extractList(data: any): any[] {
+  return (
+    data?.data?.exercises ??
+    data?.exercises ??
+    (Array.isArray(data) ? data : [])
+  );
+}
+
 export async function obtenerPartesCuerpo(): Promise<string[]> {
-  const { data } = await client.get('/exercises/bodyPartList');
-  return data;
+  const { data } = await client.get('/exercises/bodyParts');
+  return data?.data?.bodyParts ?? data?.bodyParts ?? (Array.isArray(data) ? data : []);
 }
 
 export async function obtenerEjercicios(limit = 20, offset = 0): Promise<Ejercicio[]> {
   const { data } = await client.get('/exercises', { params: { limit, offset } });
-  return data.map(normalizarEjercicio);
+  return extractList(data).map(normalizarEjercicio);
 }
 
 export async function obtenerEjerciciosPorParte(
@@ -73,7 +53,7 @@ export async function obtenerEjerciciosPorParte(
   const { data } = await client.get(`/exercises/bodyPart/${encodeURIComponent(parte)}`, {
     params: { limit, offset },
   });
-  return data.map(normalizarEjercicio);
+  return extractList(data).map(normalizarEjercicio);
 }
 
 export async function obtenerEjerciciosPorMusculo(
@@ -84,12 +64,13 @@ export async function obtenerEjerciciosPorMusculo(
   const { data } = await client.get(`/exercises/target/${encodeURIComponent(musculo)}`, {
     params: { limit, offset },
   });
-  return data.map(normalizarEjercicio);
+  return extractList(data).map(normalizarEjercicio);
 }
 
 export async function obtenerEjercicioPorId(id: string): Promise<Ejercicio> {
-  const { data } = await client.get(`/exercises/exercise/${id}`);
-  return normalizarEjercicio(data);
+  const { data } = await client.get(`/exercises/${id}`);
+  const exercise = data?.data?.exercise ?? data?.exercise ?? data;
+  return normalizarEjercicio(exercise);
 }
 
 export async function buscarEjercicios(
@@ -100,5 +81,5 @@ export async function buscarEjercicios(
   const { data } = await client.get('/exercises', {
     params: { name: nombre, limit, offset },
   });
-  return data.map(normalizarEjercicio);
+  return extractList(data).map(normalizarEjercicio);
 }
