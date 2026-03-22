@@ -1,48 +1,58 @@
-import axios from 'axios';
 import type { Ejercicio } from '@/types/ejercicio';
 
-// ExerciseDB Open Source — free, no API key required
-// Repo: https://github.com/ExerciseDB/exercisedb-api
-const BASE_URL = 'https://exercisedb-api.vercel.app/api/v1';
+const GITHUB_BASE = 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main';
+const EXERCISES_URL = `${GITHUB_BASE}/dist/exercises.json`;
+const IMAGES_BASE = `${GITHUB_BASE}/exercises`;
 
-const client = axios.create({ baseURL: BASE_URL });
+interface YuhonaExercise {
+  id: string;
+  name: string;
+  level: string;
+  equipment: string;
+  primaryMuscles: string[];
+  secondaryMuscles: string[];
+  instructions: string[];
+  category: string;
+  images: string[];
+  force?: string | null;
+  mechanic?: string | null;
+}
 
-// New API uses: exerciseId (hash), bodyParts[], targetMuscles[], equipments[], gifUrl (CDN)
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function normalizarEjercicio(e: any): Ejercicio {
+function toEjercicio(e: YuhonaExercise): Ejercicio {
   return {
-    id: e.exerciseId || e.id,
+    id: e.id,
     name: e.name,
-    bodyPart: Array.isArray(e.bodyParts) ? e.bodyParts[0] : (e.bodyPart ?? ''),
-    target: Array.isArray(e.targetMuscles) ? e.targetMuscles[0] : (e.target ?? ''),
-    equipment: Array.isArray(e.equipments) ? e.equipments[0] : (e.equipment ?? ''),
-    gifUrl: e.gifUrl || '',
-    instructions: e.instructions || [],
-    secondaryMuscles: e.secondaryMuscles || [],
+    bodyPart: e.category,
+    target: e.primaryMuscles[0] ?? '',
+    equipment: e.equipment,
+    gifUrl: e.images[0] ? `${IMAGES_BASE}/${e.images[0]}` : '',
+    instructions: e.instructions,
+    secondaryMuscles: e.secondaryMuscles,
+    difficulty: e.level,
     category: e.category,
-    description: e.description,
-    difficulty: e.difficulty,
   };
 }
 
-// Handles both flat array responses and { data: { exercises: [...] } } wrapped responses
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function extractList(data: any): any[] {
-  return (
-    data?.data?.exercises ??
-    data?.exercises ??
-    (Array.isArray(data) ? data : [])
-  );
+// Module-level cache — persists for the browser session
+let cache: YuhonaExercise[] | null = null;
+
+async function fetchAll(): Promise<YuhonaExercise[]> {
+  if (cache) return cache;
+  const res = await fetch(EXERCISES_URL);
+  if (!res.ok) throw new Error('No se pudo cargar la base de ejercicios');
+  cache = await res.json();
+  return cache!;
 }
 
 export async function obtenerPartesCuerpo(): Promise<string[]> {
-  const { data } = await client.get('/exercises/bodyParts');
-  return data?.data?.bodyParts ?? data?.bodyParts ?? (Array.isArray(data) ? data : []);
+  const exercises = await fetchAll();
+  const cats = [...new Set(exercises.map((e) => e.category))].sort();
+  return cats;
 }
 
 export async function obtenerEjercicios(limit = 20, offset = 0): Promise<Ejercicio[]> {
-  const { data } = await client.get('/exercises', { params: { limit, offset } });
-  return extractList(data).map(normalizarEjercicio);
+  const exercises = await fetchAll();
+  return exercises.slice(offset, offset + limit).map(toEjercicio);
 }
 
 export async function obtenerEjerciciosPorParte(
@@ -50,10 +60,9 @@ export async function obtenerEjerciciosPorParte(
   limit = 20,
   offset = 0
 ): Promise<Ejercicio[]> {
-  const { data } = await client.get(`/exercises/bodyPart/${encodeURIComponent(parte)}`, {
-    params: { limit, offset },
-  });
-  return extractList(data).map(normalizarEjercicio);
+  const exercises = await fetchAll();
+  const filtered = exercises.filter((e) => e.category.toLowerCase() === parte.toLowerCase());
+  return filtered.slice(offset, offset + limit).map(toEjercicio);
 }
 
 export async function obtenerEjerciciosPorMusculo(
@@ -61,16 +70,20 @@ export async function obtenerEjerciciosPorMusculo(
   limit = 20,
   offset = 0
 ): Promise<Ejercicio[]> {
-  const { data } = await client.get(`/exercises/target/${encodeURIComponent(musculo)}`, {
-    params: { limit, offset },
-  });
-  return extractList(data).map(normalizarEjercicio);
+  const exercises = await fetchAll();
+  const filtered = exercises.filter(
+    (e) =>
+      e.primaryMuscles.some((m) => m.toLowerCase() === musculo.toLowerCase()) ||
+      e.secondaryMuscles.some((m) => m.toLowerCase() === musculo.toLowerCase())
+  );
+  return filtered.slice(offset, offset + limit).map(toEjercicio);
 }
 
 export async function obtenerEjercicioPorId(id: string): Promise<Ejercicio> {
-  const { data } = await client.get(`/exercises/${id}`);
-  const exercise = data?.data?.exercise ?? data?.exercise ?? data;
-  return normalizarEjercicio(exercise);
+  const exercises = await fetchAll();
+  const exercise = exercises.find((e) => e.id === id);
+  if (!exercise) throw new Error(`Ejercicio "${id}" no encontrado`);
+  return toEjercicio(exercise);
 }
 
 export async function buscarEjercicios(
@@ -78,8 +91,8 @@ export async function buscarEjercicios(
   limit = 20,
   offset = 0
 ): Promise<Ejercicio[]> {
-  const { data } = await client.get('/exercises', {
-    params: { name: nombre, limit, offset },
-  });
-  return extractList(data).map(normalizarEjercicio);
+  const exercises = await fetchAll();
+  const q = nombre.toLowerCase();
+  const filtered = exercises.filter((e) => e.name.toLowerCase().includes(q));
+  return filtered.slice(offset, offset + limit).map(toEjercicio);
 }
