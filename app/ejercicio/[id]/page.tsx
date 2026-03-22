@@ -10,8 +10,8 @@ import { ErrorMsg } from '@/components/ErrorMsg';
 import { traducirParte, traducirMusculo, traducirEquipamiento } from '@/lib/traducciones';
 import { esFavorito, toggleFavorito } from '@/lib/favoritos';
 
-function gifProxy(url: string): string {
-  if (!url) return '';
+function gifProxy(url: string): string | null {
+  if (!url) return null;
   return `/api/imagen?url=${encodeURIComponent(url)}`;
 }
 
@@ -54,9 +54,9 @@ export default function DetalleEjercicio({ params }: { params: Promise<{ id: str
       <div className="grid md:grid-cols-2 gap-10 mb-12">
         {/* GIF */}
         <div className="bg-card border border-border rounded-2xl overflow-hidden aspect-square flex items-center justify-center gif-container">
-          {!imgError ? (
+          {!imgError && gifProxy(ejercicio.gifUrl) ? (
             <img
-              src={gifProxy(ejercicio.gifUrl)}
+              src={gifProxy(ejercicio.gifUrl)!}
               alt={ejercicio.name}
               className="w-full h-full object-contain"
               onError={() => setImgError(true)}

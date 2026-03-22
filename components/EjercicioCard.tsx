@@ -10,8 +10,8 @@ interface Props {
   ejercicio: Ejercicio;
 }
 
-function gifProxy(url: string): string {
-  if (!url) return '';
+function gifProxy(url: string): string | null {
+  if (!url) return null;
   return `/api/imagen?url=${encodeURIComponent(url)}`;
 }
 
@@ -36,9 +36,9 @@ export function EjercicioCard({ ejercicio }: Props) {
     >
       {/* GIF */}
       <div className="relative aspect-square bg-dark gif-container">
-        {!imgError ? (
+        {!imgError && gifProxy(ejercicio.gifUrl) ? (
           <img
-            src={gifProxy(ejercicio.gifUrl)}
+            src={gifProxy(ejercicio.gifUrl)!}
             alt={ejercicio.name}
             className="w-full h-full object-cover"
             onError={() => setImgError(true)}
