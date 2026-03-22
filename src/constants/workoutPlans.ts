@@ -1,0 +1,58 @@
+import type { WorkoutPlan } from '../types/exercise';
+
+export const WORKOUT_PLANS: WorkoutPlan[] = [
+  {
+    id: 'full-body-beginner',
+    name: 'Full Body Starter',
+    description: 'A complete full-body workout for beginners. Hit every major muscle group in one session.',
+    bodyParts: ['chest', 'back', 'upper legs', 'shoulders'],
+    level: 'beginner',
+    duration: '45 min',
+    exercises: [],
+  },
+  {
+    id: 'push-pull-legs',
+    name: 'Push / Pull / Legs',
+    description: 'Classic PPL split. Build mass and strength with focused muscle group training.',
+    bodyParts: ['chest', 'shoulders', 'upper arms'],
+    level: 'intermediate',
+    duration: '60 min',
+    exercises: [],
+  },
+  {
+    id: 'upper-body-blast',
+    name: 'Upper Body Blast',
+    description: 'Sculpt your chest, back, shoulders and arms with this intense upper body session.',
+    bodyParts: ['chest', 'back', 'shoulders', 'upper arms'],
+    level: 'intermediate',
+    duration: '50 min',
+    exercises: [],
+  },
+  {
+    id: 'leg-day',
+    name: 'Leg Day',
+    description: "Don't skip leg day! Squats, lunges, and deadlifts to build powerful legs.",
+    bodyParts: ['upper legs', 'lower legs'],
+    level: 'intermediate',
+    duration: '55 min',
+    exercises: [],
+  },
+  {
+    id: 'core-cardio',
+    name: 'Core & Cardio',
+    description: 'Burn fat and build a strong core with this high-intensity circuit.',
+    bodyParts: ['waist', 'cardio'],
+    level: 'beginner',
+    duration: '30 min',
+    exercises: [],
+  },
+  {
+    id: 'advanced-full-body',
+    name: 'Advanced Full Body',
+    description: 'For experienced athletes. High volume, compound movements across all muscle groups.',
+    bodyParts: ['back', 'chest', 'upper legs', 'shoulders', 'upper arms'],
+    level: 'advanced',
+    duration: '75 min',
+    exercises: [],
+  },
+];
