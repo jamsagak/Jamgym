@@ -1,10 +1,22 @@
 import axios from 'axios';
+import { Platform } from 'react-native';
 import type { Exercise } from '../types/exercise';
 
 // ExerciseDB API via RapidAPI
 // Set EXPO_PUBLIC_RAPIDAPI_KEY in your .env file
 const API_KEY = process.env.EXPO_PUBLIC_RAPIDAPI_KEY ?? '';
 const BASE_URL = 'https://exercisedb.p.rapidapi.com';
+
+// On web, GIF images require an API key header which <img> tags cannot send.
+// Route them through the local proxy instead.
+function proxyGifUrl(gifUrl: string): string {
+  if (Platform.OS !== 'web' || !gifUrl) return gifUrl;
+  return `/api/image?url=${encodeURIComponent(gifUrl)}`;
+}
+
+function proxyExercise(exercise: Exercise): Exercise {
+  return { ...exercise, gifUrl: proxyGifUrl(exercise.gifUrl) };
+}
 
 const client = axios.create({
   baseURL: BASE_URL,
@@ -33,7 +45,7 @@ export async function fetchExercises(limit = 20, offset = 0): Promise<Exercise[]
   const { data } = await client.get('/exercises', {
     params: { limit, offset },
   });
-  return data;
+  return data.map(proxyExercise);
 }
 
 export async function fetchExercisesByBodyPart(
@@ -44,7 +56,7 @@ export async function fetchExercisesByBodyPart(
   const { data } = await client.get(`/exercises/bodyPart/${encodeURIComponent(bodyPart)}`, {
     params: { limit, offset },
   });
-  return data;
+  return data.map(proxyExercise);
 }
 
 export async function fetchExercisesByTarget(
@@ -55,7 +67,7 @@ export async function fetchExercisesByTarget(
   const { data } = await client.get(`/exercises/target/${encodeURIComponent(target)}`, {
     params: { limit, offset },
   });
-  return data;
+  return data.map(proxyExercise);
 }
 
 export async function fetchExercisesByEquipment(
@@ -66,17 +78,17 @@ export async function fetchExercisesByEquipment(
   const { data } = await client.get(`/exercises/equipment/${encodeURIComponent(equipment)}`, {
     params: { limit, offset },
   });
-  return data;
+  return data.map(proxyExercise);
 }
 
 export async function fetchExerciseById(id: string): Promise<Exercise> {
   const { data } = await client.get(`/exercises/exercise/${id}`);
-  return data;
+  return proxyExercise(data);
 }
 
 export async function searchExercises(name: string, limit = 20, offset = 0): Promise<Exercise[]> {
   const { data } = await client.get('/exercises', {
     params: { name, limit, offset },
   });
-  return data;
+  return data.map(proxyExercise);
 }
